@@ -22,7 +22,7 @@ import slugify from 'slugify';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { UploadButton } from '@/lib/uploadthing';
-import { updateProduct } from '@/lib/actions/procduct.actions_xx';
+import { updateProduct } from '@/lib/actions/product.actions_66';
 import { Checkbox } from '@/components/ui/checkbox';
 
 const UpdateProductForm_xx = ({
