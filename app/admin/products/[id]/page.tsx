@@ -1,21 +1,19 @@
 import { Metadata } from 'next';
 import UpdateProductForm_xx from './update-product-form_xx';
-import { getProductById } from '@/lib/actions/procduct.actions_xx';
-import notFound from '@/app/not-found';
+import { getProductById } from '@/lib/actions/product.actions_66';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Update Product',
 };
 
-const UpdateProductPage_xx = async (props: {
-  params: Promise<{
-    id: string;
-  }>;
+const UpdateProductPage_xx = async ({
+  params,
+}: {
+  params: { id: string };
 }) => {
-  const { id } = await props.params;
+  const { id } = params;
   const product = await getProductById(id);
-  console.log('product', product);
-  console.log('typeof product', typeof product);
   if (!product) notFound();
 
   return (

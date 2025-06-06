@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { getAllUsers, deleteUser } from '@/lib/actions/user.actoins_58';
+import { getAllUsers, deleteUser } from '@/lib/actions/user.actoins_xx';
 import {
   Table,
   TableBody,
