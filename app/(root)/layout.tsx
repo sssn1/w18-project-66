@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
-import Header_66 from '@/components/ui/shared/header_66';
-import Footer_66 from '@/components/ui/shared/footer_66';
+import Header_66 from '@/components/shared/header_66';
+import Footer_66 from '@/components/shared/footer_66';
 export const metadata: Metadata = {
   title: 'TKU_66'
 };

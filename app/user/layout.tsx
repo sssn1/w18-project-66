@@ -2,7 +2,7 @@ import { APP_NAME } from '@/lib/constants';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import Menu_xx from '@/components/ui/shared/header_66/menu_xx';
+import Menu_xx from '@/components/shared/header_66/menu_xx';
 import MainNav_xx from './main-nav_xx';
 
 export const metadata: Metadata = {

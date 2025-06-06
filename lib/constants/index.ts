@@ -37,3 +37,6 @@ export const productDefaultValues = {
 export const USER_ROLES = process.env.USER_ROLES
   ? process.env.USER_ROLES.split(',')
   : ['admin', 'user'];
+
+  export const LATEST_PRODUCTS_LIMIT =
+  Number(process.env.LATEST_PRODUCTS_LIMIT) || 4;

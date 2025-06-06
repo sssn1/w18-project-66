@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { APP_NAME } from '@/lib/constants';
 import {EllipsisVertical, ShoppingCart, UserIcon } from 'lucide-react';
 import Modetoggle_66 from './mode-toggle_66';
-import { Button } from '../../button';
+import { Button } from '../../ui/button';
 import Menu_xx from './menu_xx';
 const Header_66 = () => {
   return (

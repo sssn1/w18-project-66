@@ -1,6 +1,6 @@
 //import sampleData from "@/db/sample-data";
-import ProductList_66 from "@/components/product_66/product-list_66";
-import { getLatestProducts_66 } from "@/lib/actions/procduct.actions_66";
+import ProductList_66 from "@/components/shared/product_66/product-list_66";
+import { getLatestProducts_66 } from "@/lib/actions/product.actions_66";
 
 //const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
