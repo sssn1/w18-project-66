@@ -15,7 +15,8 @@ const Header_66 = () => {
           </Link>
         </div>
         <Menu_xx />
-        {/* <div className="flex justify-end gap-3">
+        {/* 
+        </div<div className="flex justify-end gap-3">
             <Modetoggle_66 />
           <Button asChild variant='outline'>
             <Link href='/cart' >
@@ -26,8 +27,7 @@ const Header_66 = () => {
             <Link href='/sign-in' >
             <UserIcon /> Sign In
             </Link>
-          </Button>
-        </div> */}
+          </Button>> */}
       </div>
     </header>
   );
