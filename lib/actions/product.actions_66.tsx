@@ -1,6 +1,6 @@
 'use server';
 import { withAccelerate } from '@prisma/extension-accelerate';
-import { PrismaClient ,Prisma } from '@/lib/generated/prisma/client';
+import { PrismaClient, Prisma } from '@/lib/generated/prisma';
 import { LATEST_PRODUCTS_LIMIT, PAGE_SIZE } from '@/lib/constants';
 import { convertToPlainObject, formatError } from '@/lib/utils';
 import { revalidatePath } from 'next/cache';
