@@ -9,6 +9,8 @@ import { Prisma } from '@prisma/client';
 import { cartItemSchema, insertCartSchema } from '../validator';
 import { revalidatePath } from 'next/cache';
 import { Decimal } from '@prisma/client/runtime/binary';
+import { randomUUID } from 'crypto';
+// import { updateCartItemQty } from '@/lib/actions/cart.actions_66';
 
 // Calculate cart price
 const calcPrice = (items: CartItem[]) => {
@@ -27,31 +29,33 @@ const calcPrice = (items: CartItem[]) => {
 };
 
 export async function addItemToCart(data: CartItem) {
-  // Simulate adding item to cart
   console.log('Adding item to cart:', data);
   try {
-    // check for the cart cookie
-    const sessionCardId = (await cookies()).get('sessionCartId')?.value;
-    if (!sessionCardId) throw new Error('Cart session not found');
+    const cookieStore = await cookies();
+    let sessionCartId = cookieStore.get('sessionCartId')?.value;
 
-    // Get session and use ID
+    if (!sessionCartId) {
+      sessionCartId = randomUUID();
+      cookieStore.set('sessionCartId', sessionCartId, {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7, // 7天
+      });
+    }
+
     const session = await auth();
     const userId = session?.user?.id ? (session.user.id as string) : undefined;
 
-    // Get cart
     const cart = await getMyCart();
-
-    // Parse and validate item
     const item = cartItemSchema.parse(data);
 
-    // Find product in database
     const product = await prisma.product.findFirst({
       where: { id: item.productId },
     });
 
-    // testing
     console.log({
-      'Session CartId': sessionCardId,
+      'Session CartId': sessionCartId,
       'User Id': userId,
       'Item Request': item,
       'Product Found': product,
@@ -61,40 +65,57 @@ export async function addItemToCart(data: CartItem) {
     if (!product) throw new Error('Product not found');
 
     if (!cart) {
-      // Create a new cart object
+      // 新增購物車
       const newCart = insertCartSchema.parse({
         userId: userId,
         items: [item],
-        sessionCartId: sessionCardId,
+        sessionCartId: sessionCartId,
         ...calcPrice([item]),
-        // itemsPrice: new Decimal(calcPrice([item]).itemsPrice),
-        // shippingPrice: new Decimal(calcPrice([item]).shippingPrice),
-        // taxPrice: new Decimal(calcPrice([item]).taxPrice),
-        // totalPrice: new Decimal(calcPrice([item]).totalPrice),
       });
 
       console.log({ 'New Cart': newCart });
-      // Add to database
       await prisma.cart.create({
         data: {
           ...newCart,
-          itemsPrice: new Decimal(newCart.itemPrice),
+          itemsPrice: new Decimal(newCart.itemsPrice),
           shippingPrice: new Decimal(newCart.shippingPrice),
           taxPrice: new Decimal(newCart.taxPrice),
           totalPrice: new Decimal(newCart.totalPrice),
         },
       });
 
-      // Revalidate product page
-      revalidatePath(`/product/${product.slug}`);
+      await revalidatePath(`/product/${product.slug}`);
+    } else {
+      // 購物車已存在，合併商品
+      let items = Array.isArray(cart.items) ? [...cart.items] : [];
+      const existIdx = items.findIndex((i: CartItem) => i.productId === item.productId);
+
+      if (existIdx > -1) {
+        // 已存在則數量相加
+        items[existIdx].qty += item.qty;
+      } else {
+        items.push(item);
+      }
+
+      const priceObj = calcPrice(items);
+
+      await prisma.cart.update({
+        where: { id: cart.id },
+        data: {
+          items: items,
+          itemsPrice: new Decimal(priceObj.itemsPrice),
+          shippingPrice: new Decimal(priceObj.shippingPrice),
+          taxPrice: new Decimal(priceObj.taxPrice),
+          totalPrice: new Decimal(priceObj.totalPrice),
+        },
+      });
+
+      await revalidatePath(`/product/${product.slug}`);
     }
     return { success: true, message: 'Item added to cart' };
   } catch (error) {
     return { success: false, message: formatError(error) };
   }
-
-  // Here you would typically call an API endpoint or a database function
-  // to add the item to the user's cart.
 }
 
 export async function getMyCart() {
@@ -122,3 +143,45 @@ export async function getMyCart() {
     taxPrice: cart.taxPrice.toString(),
   });
 }
+
+export async function checkoutCart(formData: any) {
+  // 這裡寫你的結帳邏輯
+  return { success: true, message: '結帳成功' };
+}
+
+export async function updateCartItemQty(itemId: string, newQty: number) {
+  const cookieStore = await cookies();
+  const sessionCartId = cookieStore.get('sessionCartId')?.value;
+  if (!sessionCartId) return { success: false, message: 'No cart session' };
+
+  const cart = await prisma.cart.findFirst({
+    where: { sessionCartId },
+  });
+  if (!cart) return { success: false, message: 'Cart not found' };
+
+  let items = Array.isArray(cart.items) ? [...cart.items] : [];
+  const idx = items.findIndex((i: any) => i.id === itemId);
+  if (idx === -1) return { success: false, message: 'Item not found' };
+
+  if (newQty <= 0) {
+    items.splice(idx, 1);
+  } else {
+    items[idx].qty = newQty;
+  }
+
+  const priceObj = calcPrice(items);
+
+  await prisma.cart.update({
+    where: { id: cart.id },
+    data: {
+      items: items,
+      itemsPrice: new Decimal(priceObj.itemsPrice),
+      shippingPrice: new Decimal(priceObj.shippingPrice),
+      taxPrice: new Decimal(priceObj.taxPrice),
+      totalPrice: new Decimal(priceObj.totalPrice),
+    },
+  });
+
+  return { success: true };
+}
+

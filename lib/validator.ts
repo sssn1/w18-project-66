@@ -2,10 +2,10 @@ import { z } from 'zod';
 import { formatNumberWithDecimal } from './utils';
 
 const currency = z
-  .string()
+  .number()
   .refine(
-    (value) => /^\d+(\.\d{2})?$/.test(formatNumberWithDecimal(Number(value))),
-    'Price must have exactly two decimal places'
+    (value) => /^\d+(\.\d{1,2})?$/.test(value.toFixed(2)),
+    'Price must have up to two decimal places'
   );
 
 // Schema for inserting a product
@@ -50,40 +50,21 @@ export const signUpFormSchema = z
 
 // Cart schema
 export const cartItemSchema = z.object({
-  productId: z.string().min(1, 'Product id is required'),
-  name: z.string().min(1, 'Name is required'),
-  slug: z.string().min(1, 'slug is required'),
-  qty: z.number().int().nonnegative('Quantity must be a positive integer'),
-  image: z.string().min(1, 'Image is required'),
+  productId: z.string(),
+  name: z.string(),
   price: currency,
+  qty: z.number(),
+  image: z.string(),
+  slug: z.string(),
 });
-
-// export const insertCartSchema = z.object({
-//   userId: z.string().optional(),
-//   sessionCartId: z.string(),
-//   items: z.array(
-//     z.object({
-//       name: z.string(),
-//       price: z.string(),
-//       slug: z.string(),
-//       productId: z.string(),
-//       qty: z.number(),
-//       image: z.string(),
-//     })
-//   ),
-//   itemsPrice: z.string(),
-//   totalPrice: z.string(),
-//   shippingPrice: z.string(),
-//   taxPrice: z.string(),
-// });
 
 export const insertCartSchema = z.object({
   items: z.array(cartItemSchema),
-  itemPrice: currency,
+  itemsPrice: currency,
   totalPrice: currency,
   shippingPrice: currency,
   taxPrice: currency,
-  sessionCardId: z.string().min(1, 'Session card id is required'),
+  sessionCartId: z.string().min(1, 'Session cart id is required'),
   userId: z.string().optional().nullable(),
 });
 
