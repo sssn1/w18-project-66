@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import CartForm_xx from './cart';
-import { getMyCart } from '@/lib/actions/cart.actions_66';
+import { updateCartItemQty } from '@/lib/actions/cart.actions_66'; // 正確導入函數
 
 type CartItem = {
   id: string;
@@ -13,7 +13,7 @@ type CartItem = {
 type Promotion = {
   id: string;
   name: string;
-  discountType: 'percent' | 'amount';
+  discountType: 'percent';
   discountValue: number;
 };
 
@@ -23,20 +23,66 @@ const mockPromotions: Promotion[] = [
   { id: 'p3', name: '會員折10', discountType: 'amount', discountValue: 10 },
 ];
 
+// 讀取所有以 `cartItem_` 開頭的 cookie
+const getCartFromCookies = (): CartItem[] => {
+  const cookies = document.cookie.split('; ');
+  const cartItems: CartItem[] = [];
+
+  cookies.forEach(cookie => {
+    if (cookie.startsWith('cartItem_')) {
+      try {
+        const item = JSON.parse(decodeURIComponent(cookie.split('=')[1]));
+        cartItems.push(item);
+      } catch (error) {
+        console.error('Error parsing cookie:', error);
+      }
+    }
+  });
+
+  return cartItems;
+};
+
+// 新增商品時生成新的 cookie
+const addItemToCart = (item: CartItem) => {
+  const uniqueCookieName = `cartItem_${item.id}`;
+  document.cookie = `${uniqueCookieName}=${encodeURIComponent(JSON.stringify(item))}; path=/; max-age=${60 * 60 * 24 * 7}`;
+};
+
+// 刪除指定的 cookie
+const deleteCookie = (cookieName: string) => {
+  document.cookie = `${cookieName}=; path=/; max-age=0`;
+};
+
+// 完全移除商品
+const handleRemoveItem = async (itemId: string, setCart: React.Dispatch<React.SetStateAction<CartItem[]>>) => {
+  const sessionCartId = document.cookie.split('; ').find(cookie => cookie.startsWith('sessionCartId='))?.split('=')[1];
+
+  if (!sessionCartId) {
+    alert('No cart session. Please add items to your cart first.');
+    return;
+  }
+
+  try {
+    const response = await updateCartItemQty(itemId, 0); // 將商品數量設為 0，觸發移除邏輯
+    if (response.success) {
+      setCart(getCartFromCookies()); // 更新 React 狀態
+    } else {
+      console.error(response.message);
+      alert(response.message); // 顯示錯誤訊息給用戶
+    }
+  } catch (error) {
+    console.error('Error removing item:', error);
+    alert('Failed to remove item. Please try again.');
+  }
+};
+
 export default function CheckoutPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [promotions] = useState<Promotion[]>(mockPromotions);
   const [selectedPromo, setSelectedPromo] = useState<Promotion | null>(null);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const result = await getMyCart();
-        setCart(result?.items || []);
-      } catch (e) {
-        setCart([]); // 沒有購物車就顯示空
-      }
-    })();
+    setCart(getCartFromCookies());
   }, []);
 
   const total = cart.reduce((sum, item) => sum + Number(item.price) * Number(item.qty), 0);
@@ -44,33 +90,12 @@ export default function CheckoutPage() {
   let finalTotal = total;
   if (selectedPromo) {
     if (selectedPromo.discountType === 'percent') {
-      // 例如 10% off 就是 0.9
       finalTotal = total * (1 - selectedPromo.discountValue / 100);
     } else {
       finalTotal = Math.max(0, total - selectedPromo.discountValue);
     }
   }
-  // 保留兩位小數
   finalTotal = Math.round(finalTotal * 100) / 100;
-
-  const handleDecrease = async (itemId: string) => {
-    const item = cart.find(i => i.id === itemId);
-    const newQty = item ? item.qty - 1 : 0;
-
-    await fetch('/api/cart/updateQty', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ itemId, newQty }),
-    });
-
-    // 重新撈 cart
-    try {
-      const result = await getMyCart();
-      setCart(result?.items || []);
-    } catch {
-      setCart([]);
-    }
-  };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-[#0a1128]">
@@ -84,12 +109,16 @@ export default function CheckoutPage() {
                 <li key={item.id} className="py-2 flex justify-between items-center text-gray-800">
                   <div>
                     {item.name} x {item.qty}
-                    <button
-                      className="ml-2 px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                      onClick={() => handleDecrease(item.id)}
-                    >-</button>
                   </div>
-                  <span className="font-semibold">${(Number(item.price) * Number(item.qty)).toFixed(2)}</span>
+                  <div className="flex items-center">
+                    <span className="font-semibold mr-4">${(Number(item.price) * Number(item.qty)).toFixed(2)}</span>
+                    <button
+                      className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                      onClick={() => handleRemoveItem(item.id, setCart)}
+                    >
+                      移除
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -122,7 +151,6 @@ export default function CheckoutPage() {
               </span>
             </div>
           </div>
-          {/* 結帳表單 */}
           <CartForm_xx />
         </div>
       </div>

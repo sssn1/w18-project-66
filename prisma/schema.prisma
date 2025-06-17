@@ -86,19 +86,14 @@ model VerificationToken {
 }
 
 model Cart {
-  id            String      @id @default(uuid())
-  sessionCartId String      @unique
-  items         CartItem[]  // 關聯
-  // ...其他欄位...
-
-  User User[]
-}
-
-model CartItem {
-  id       String  @id @default(uuid())
-  cart     Cart?   @relation(fields: [cartId], references: [id])
-  cartId   String?
-  // ...其他欄位...
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String?
+  sessionCartId String?
+  items         CartItem[]  // 關聯到 CartItem 模型
+  itemsPrice    Decimal     @default(0) @db.Decimal(12, 2)
+  shippingPrice Decimal     @default(0) @db.Decimal(12, 2)
+  taxPrice      Decimal     @default(0) @db.Decimal(12, 2)
+  totalPrice    Decimal     @default(0) @db.Decimal(12, 2)
 }
 
 model Order {

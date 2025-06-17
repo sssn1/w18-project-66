@@ -32,108 +32,45 @@ export async function addItemToCart(data: CartItem) {
   console.log('Adding item to cart:', data);
   try {
     const cookieStore = await cookies();
-    let sessionCartId = cookieStore.get('sessionCartId')?.value;
 
-    if (!sessionCartId) {
-      sessionCartId = randomUUID();
-      cookieStore.set('sessionCartId', sessionCartId, {
-        path: '/',
-        httpOnly: true,
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 7天
-      });
-    }
+    // 為每個商品生成一個唯一的 cookie 名稱
+    const uniqueCookieName = `cartItem_${randomUUID()}`;
 
-    const session = await auth();
-    const userId = session?.user?.id ? (session.user.id as string) : undefined;
-
-    const cart = await getMyCart();
-    const item = cartItemSchema.parse(data);
-
-    const product = await prisma.product.findFirst({
-      where: { id: item.productId },
+    // 將商品資料存入新的 cookie
+    cookieStore.set(uniqueCookieName, JSON.stringify(data), {
+      path: '/', // Cookie 的作用域
+      httpOnly: false, // 允許客戶端訪問
+      sameSite: 'lax', // 防止跨站請求偽造
+      maxAge: 60 * 60 * 24 * 7, // 7 天有效期
     });
 
-    console.log({
-      'Session CartId': sessionCartId,
-      'User Id': userId,
-      'Item Request': item,
-      'Product Found': product,
-      'Cart Found': cart,
-    });
-
-    if (!product) throw new Error('Product not found');
-
-    if (!cart) {
-      // 新增購物車
-      const newCart = insertCartSchema.parse({
-        userId: userId,
-        items: [item],
-        sessionCartId: sessionCartId,
-        ...calcPrice([item]),
-      });
-
-      console.log({ 'New Cart': newCart });
-      await prisma.cart.create({
-        data: {
-          ...newCart,
-          itemsPrice: new Decimal(newCart.itemsPrice),
-          shippingPrice: new Decimal(newCart.shippingPrice),
-          taxPrice: new Decimal(newCart.taxPrice),
-          totalPrice: new Decimal(newCart.totalPrice),
-        },
-      });
-
-      await revalidatePath(`/product/${product.slug}`);
-    } else {
-      // 購物車已存在，合併商品
-      let items = Array.isArray(cart.items) ? [...cart.items] : [];
-      const existIdx = items.findIndex((i: CartItem) => i.productId === item.productId);
-
-      if (existIdx > -1) {
-        // 已存在則數量相加
-        items[existIdx].qty += item.qty;
-      } else {
-        items.push(item);
-      }
-
-      const priceObj = calcPrice(items);
-
-      await prisma.cart.update({
-        where: { id: cart.id },
-        data: {
-          items: items,
-          itemsPrice: new Decimal(priceObj.itemsPrice),
-          shippingPrice: new Decimal(priceObj.shippingPrice),
-          taxPrice: new Decimal(priceObj.taxPrice),
-          totalPrice: new Decimal(priceObj.totalPrice),
-        },
-      });
-
-      await revalidatePath(`/product/${product.slug}`);
-    }
     return { success: true, message: 'Item added to cart' };
   } catch (error) {
+    console.error('Error adding item to cart:', error);
     return { success: false, message: formatError(error) };
   }
 }
 
 export async function getMyCart() {
   const sessionCardId = (await cookies()).get('sessionCartId')?.value;
-  if (!sessionCardId) throw new Error('Cart session not found');
+  console.log('Session Cart ID:', sessionCardId);
 
-  // Get session and use ID
   const session = await auth();
   const userId = session?.user?.id ? (session.user.id as string) : undefined;
+  console.log('User ID:', userId);
 
-  // Get user cart from database
-  const cart = await prisma.cart.findFirst({
-    where: userId ? { userId: userId } : { sessionCartId: sessionCardId },
-  });
+ if (!sessionCardId && !userId) {
+  throw new Error('Cart session or user ID not found');
+}
+
+const cart = await prisma.cart.findFirst({
+  where: userId ? { userId: userId } : { sessionCartId: sessionCardId },
+});
+
+  console.log('Cart Found:', cart);
 
   if (!cart) return undefined;
 
-  // Convert decimal and return
   return convertToPlainObject({
     ...cart,
     items: cart.items as CartItem[],
@@ -164,9 +101,9 @@ export async function updateCartItemQty(itemId: string, newQty: number) {
   if (idx === -1) return { success: false, message: 'Item not found' };
 
   if (newQty <= 0) {
-    items.splice(idx, 1);
+    items.splice(idx, 1); // 移除商品
   } else {
-    items[idx].qty = newQty;
+    items[idx].qty = newQty; // 更新商品數量
   }
 
   const priceObj = calcPrice(items);
@@ -182,6 +119,6 @@ export async function updateCartItemQty(itemId: string, newQty: number) {
     },
   });
 
-  return { success: true };
+  return { success: true, message: 'Item updated successfully' };
 }
 
