@@ -1,0 +1,18 @@
+NEXT_PUBLIC_APP_NAME= 'Prostore_66'
+NEXT_PUBLIC_APP_DESCRIPTION = 'A modern store built with Next.js, ShadCN, and Prisma'
+NEXT_PUBLIC_SERVER_URL = "http://localhost:3000"
+
+# This was inserted by `prisma init`:
+# Environment variables declared in this file are automatically made available to Prisma.
+# See the documentation for more detail: https://pris.ly/d/prisma-schema#accessing-environment-variables-from-the-schema
+
+# Prisma supports the native connection string format for PostgreSQL, MySQL, SQLite, SQL Server, MongoDB and CockroachDB.
+# See the documentation for all the connection string options: https://pris.ly/d/connection-strings
+
+
+AUTH_SECRET="cxDR6AxVn6Sk+E8IIDD87E73h00HO88H5tITqxZIVcI=" # Added by `npx auth`. Read more: https://cli.authjs.dev
+
+DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.
+eyJhcGlfa2V5IjoiNTJiZDI3NDctOWNmMi00MzllLTgyODgtMmI2NmMzMWIyZDJmIiwidGVuYW50X2lkIjoiNDA3M2UzZDMwYzY5NDM3ZTE1YzA3ZDYxNjg4MTBiMzI5YTZkZjUwYTVlMjM5ZjMzNmI4NDE4NzQ1ZThiNDI5NyIsImludGVybmFsX3NlY3JldCI6ImMyMDMyZGJmLTE3NmEtNGFiNS05MzFmLTY1NTQ3OTY1OTM1MiJ9.zZYToT0V0u311nQkBl1ct-Q16QjTwENiMNrwAtdJ4VQ"
+UPLOADTHING_TOKEN='eyJhcGlLZXkiOiJza19saXZlXzExOWZlNzQzYTNmMTQ2OWFmZGI2NTY3ZDNjN2YxYzVkY2ZhMTIzYWNiZmNkNTY3NTkzNDMwZjc4YjliM2YxNDciLCJhcHBJZCI6Imlzd3EwZ3A5YWoiLCJyZWdpb25zIjpbInNlYTEiXX0='
+UPLOADTHING_SECRET='sk_live_119fe743a3f1469afdb6567d3c7f1c5dcfa123acbfcd567593430f78b9b3f147'
